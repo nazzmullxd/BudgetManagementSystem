@@ -7,12 +7,14 @@ namespace Database.Model
         [Key]
         public string DueId { get; set; } = Guid.NewGuid().ToString();
 
-        [Required]
+        [Required, MaxLength(50)]
         public string Payee { get; set; } = string.Empty; // Name of the person/entity to whom the due is owed
 
         [Required]
         [Range(0, double.MaxValue, ErrorMessage = "Daily Limit Must be Positive")] 
         public decimal TotalDueAmount { get; set; } = decimal.Zero; // Total due amount
+        [Required]
+        public DateOnly DueDate {  get; set; }
 
         [Required]
         [Range(0, double.MaxValue, ErrorMessage = "Daily Limit Must be Positive")]
@@ -23,5 +25,6 @@ namespace Database.Model
 
         [Required]
         public bool IsPaid { get; set; } = false; // Indicates whether the due is fully paid
+        public String? UserID { get; set; }
     }
 }

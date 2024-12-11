@@ -8,7 +8,7 @@ namespace Database.Model
         [Key]
         public string ReminderId { get; set; } = Guid.NewGuid().ToString();
         [Required]
-        public Decimal ReminderExpense { get; set; }
+        public Decimal ExpenseLimit { get; set; }
         
         
 

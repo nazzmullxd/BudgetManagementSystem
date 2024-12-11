@@ -6,8 +6,8 @@ namespace Database.Model
     public class TrackExpense
     {
         [Key]
-        public string ItemId { get; set; } = Guid.NewGuid().ToString();
-        [Required]
+        public string TrackExpenseId { get; set; } = Guid.NewGuid().ToString();
+        [Required, MaxLength(50)]
         public string? ItemName { get; set; }
         [Required]
         public decimal? ItemPrice { get; set; }
@@ -18,9 +18,11 @@ namespace Database.Model
         public DateTime? CreatedAt { get; set; } = DateTime.Now;
         [Required]
         public DateTime? UpdatedAt { get;set; }
-        
+        [Required]
+        public string ?User { get; set; }
+        public string ? ExpenseCategoryId { get; set;}
 
 
-    
+
     }
 }
