@@ -5,7 +5,7 @@ namespace Database.Model
     public class BudgetAlerts
     {
         [Key]
-        public string BudgetId { get; set; } = Guid.NewGuid().ToString();
+        public string BudgetAlertsId { get; set; } = Guid.NewGuid().ToString();
         [Required]
         [Range (0,double.MaxValue,ErrorMessage ="Daily Limit Must be Positive")]
         public decimal DailyLimit { get; set; } = decimal.Zero;
