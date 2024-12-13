@@ -13,9 +13,9 @@ namespace Database.Model
         [MaxLength(100)]
         public string? CategoryDescription { get; set; }
         [Required]
-        public string? TrackExpenseID { get; set; }
+        public string? TrackExpenseId { get; set; }
         [Required]
-        public string ?UserID { get; set; }
+        public string ?UserId { get; set; }
 
         }
 }
