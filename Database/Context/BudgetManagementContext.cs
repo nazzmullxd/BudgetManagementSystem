@@ -7,7 +7,7 @@ namespace Database.Context
     {
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlServer(@"Server=.;Database=NASIM\MSSQLSERVER01;Trusted_Connection=True;TrustServerCertificate=True;ConnectRetryCount=0");
+            optionsBuilder.UseSqlServer(@"Server=.;Database=BudgetManagementSystem;Trusted_Connection=True;TrustServerCertificate=True;");
         }
 
         public DbSet<User> Users { get; set; }
@@ -16,5 +16,11 @@ namespace Database.Context
         public DbSet<ExpenseCategory> ExpenseCategories { get; set; }
         public DbSet<DuesManagement> DuesManagements { get; set; }
         public DbSet<BudgetAlerts> BudgetAlerts { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            // Configure relationships, keys, indexes, etc.
+            base.OnModelCreating(modelBuilder);
+        }
     }
 }
