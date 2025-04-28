@@ -1,10 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Database.Model
 {
-    public class TrackExpense
+    public partial class TrackExpense
     {
         [Key]
         public string TrackExpenseId { get; set; } = Guid.NewGuid().ToString();
@@ -17,18 +17,31 @@ namespace Database.Model
         public decimal ItemPrice { get; set; } = decimal.Zero;
 
         [Required]
-        public decimal ItemAmount { get; set; } = decimal.Zero;
+        public decimal Quantity { get; set; } = 1.0M; // Renamed from ItemAmount
+
+        public decimal TotalCost => ItemPrice * Quantity;
+
+        [Required]
+        public DateTime TransactionDate { get; set; } = DateTime.Now;
 
         [Required]
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
         [Required]
-        public DateTime UpdatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; } = DateTime.Now;
 
         [Required]
         public string UserId { get; set; } = string.Empty;
+        public User User { get; set; }
 
-        // If this is a foreign key, consider adding a navigation property.
+        [Required]
         public string ExpenseCategoryId { get; set; } = string.Empty;
+        public ExpenseCategory Category { get; set; }
+
+        [Required]
+        public string CurrencyId { get; set; } = string.Empty;
+        public Currency Currency { get; set; }
+
+        public List<TransactionTag> TransactionTags { get; set; } = new List<TransactionTag>();
     }
 }

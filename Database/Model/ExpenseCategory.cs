@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace Database.Model
 {
@@ -15,12 +16,12 @@ namespace Database.Model
         [MaxLength(100)]
         public string CategoryDescription { get; set; } = string.Empty;
 
-        // If ExpenseCategory should be independent of TrackExpense,
-        // consider removing this foreign key property or change your design.
-        [Required]
-        public string TrackExpenseId { get; set; } = string.Empty;
-
         [Required]
         public string UserId { get; set; } = string.Empty;
+        public User User { get; set; }
+
+        public List<TrackExpense> Expenses { get; set; } = new List<TrackExpense>();
+        public List<RecurringTransaction> RecurringTransactions { get; set; } = new List<RecurringTransaction>();
+        public List<BudgetGoal> BudgetGoals { get; set; } = new List<BudgetGoal>();
     }
 }

@@ -1,9 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace Database.Model
 {
-    public class TrackIncome
+    public partial class TrackIncome
     {
         [Key]
         public string IncomeId { get; set; } = Guid.NewGuid().ToString();
@@ -26,11 +27,23 @@ namespace Database.Model
         [Required]
         public DateTime IncomeDate { get; set; }
 
-        // Removed [MaxLength] because it does not apply to decimals.
         [Required]
         public decimal IncomeTax { get; set; } = decimal.Zero;
 
+        public decimal NetIncome => IncomeAmount - IncomeTax;
+
+        [Required]
+        [MaxLength(50)]
+        public string Frequency { get; set; } = "OneTime";
+
         [Required]
         public string UserId { get; set; } = string.Empty;
+        public User User { get; set; }
+
+        [Required]
+        public string CurrencyId { get; set; } = string.Empty;
+        public Currency Currency { get; set; }
+
+        public List<TransactionTag> TransactionTags { get; set; } = new List<TransactionTag>();
     }
 }

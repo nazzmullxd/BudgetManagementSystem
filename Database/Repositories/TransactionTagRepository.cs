@@ -1,0 +1,54 @@
+﻿using Database.Model;
+using Database.Context;
+using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace BudgetManagementSystem.Repositories
+{
+    public class TransactionTagRepository : ITransactionTagRepository
+    {
+        private readonly BudgetManagementContext _context;
+
+        public TransactionTagRepository(BudgetManagementContext context)
+        {
+            _context = context;
+        }
+
+        public void Add(TransactionTag transactionTag)
+        {
+            _context.TransactionTags.Add(transactionTag);
+            _context.SaveChanges();
+        }
+
+        public List<TransactionTag> GetByTagId(string tagId)
+        {
+            return _context.TransactionTags
+                .Include(tt => tt.Tag)
+                .Include(tt => tt.Expense)
+                .Include(tt => tt.Income)
+                .Where(tt => tt.TagId == tagId)
+                .ToList();
+        }
+
+        public List<TransactionTag> GetByExpenseId(string expenseId)
+        {
+            return _context.TransactionTags
+                .Include(tt => tt.Tag)
+                .Include(tt => tt.Expense)
+                .Include(tt => tt.Income)
+                .Where(tt => tt.TrackExpenseId == expenseId)
+                .ToList();
+        }
+
+        public List<TransactionTag> GetByIncomeId(string incomeId)
+        {
+            return _context.TransactionTags
+                .Include(tt => tt.Tag)
+                .Include(tt => tt.Expense)
+                .Include(tt => tt.Income)
+                .Where(tt => tt.TrackIncomeId == incomeId)
+                .ToList();
+        }
+    }
+}

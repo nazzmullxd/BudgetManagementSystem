@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace Database.Model
 {
@@ -25,10 +26,10 @@ namespace Database.Model
         [Required]
         public bool IsSent { get; set; } = false;
 
-        // Consider renaming to "UserId" for consistency if this is a foreign key.
-        public string UserId { get; set; } = string.Empty;
+        public DateTime? LastTriggered { get; set; }
 
-        // Consider using navigation properties instead of just storing the foreign key string.
-        public string TrackExpenseId { get; set; } = string.Empty;
+        [Required]
+        public string UserId { get; set; } = string.Empty;
+        public User User { get; set; }
     }
 }

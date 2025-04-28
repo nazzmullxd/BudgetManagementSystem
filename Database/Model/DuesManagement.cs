@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace Database.Model
 {
@@ -16,19 +17,21 @@ namespace Database.Model
         public decimal TotalDueAmount { get; set; } = decimal.Zero;
 
         [Required]
-        public DateOnly DueDate { get; set; }
+        public DateTime DueDate { get; set; }
 
         [Required]
         [Range(0, double.MaxValue, ErrorMessage = "Paid amount must be positive.")]
         public decimal PaidAmount { get; set; } = decimal.Zero;
 
-        // Calculated property; no data annotation needed.
         public decimal RemainingDue => TotalDueAmount - PaidAmount;
 
         [Required]
         public bool IsPaid { get; set; } = false;
 
-        // Again, consider using non-nullable if always expected.
+        public DateTime? ReminderDate { get; set; }
+
+        [Required]
         public string UserId { get; set; } = string.Empty;
+        public User User { get; set; }
     }
 }
