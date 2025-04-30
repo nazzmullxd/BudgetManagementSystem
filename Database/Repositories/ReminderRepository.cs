@@ -1,11 +1,11 @@
 ﻿using Database.Model;
 using Database.Context;
 using Microsoft.EntityFrameworkCore;
-using System;
 using System.Collections.Generic;
 using System.Linq;
+using Database.Repositories;
 
-namespace BudgetManagementSystem.Repositories
+namespace Database.Repositories
 {
     public class ReminderRepository : IReminderRepository
     {
@@ -22,7 +22,7 @@ namespace BudgetManagementSystem.Repositories
             _context.SaveChanges();
         }
 
-        public List<Reminder> GetByUserId(string userId)
+        public List<Reminder>? GetByUserId(string userId)
         {
             return _context.Reminders
                 .Include(r => r.User)
@@ -30,17 +30,22 @@ namespace BudgetManagementSystem.Repositories
                 .ToList();
         }
 
-        public List<Reminder> GetUpcomingReminders(string userId, DateTime upcomingDate)
+        public Reminder? GetById(string reminderId)
         {
             return _context.Reminders
                 .Include(r => r.User)
-                .Where(r => r.UserId == userId && r.DueDate <= upcomingDate && !r.IsSent)
-                .ToList();
+                .FirstOrDefault(r => r.ReminderId == reminderId);
         }
 
         public void Update(Reminder reminder)
         {
             _context.Reminders.Update(reminder);
+            _context.SaveChanges();
+        }
+
+        public void Delete(Reminder reminder)
+        {
+            _context.Reminders.Remove(reminder);
             _context.SaveChanges();
         }
     }

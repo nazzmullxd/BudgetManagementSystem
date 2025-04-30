@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace BudgetManagementSystem.Repositories
+namespace Database.Repositories
 {
     public class DuesManagementRepository : IDuesManagementRepository
     {
@@ -21,7 +21,7 @@ namespace BudgetManagementSystem.Repositories
             _context.SaveChanges();
         }
 
-        public List<DuesManagement> GetByUserId(string userId)
+        public List<DuesManagement>? GetByUserId(string userId)
         {
             return _context.DuesManagements
                 .Include(d => d.User)
@@ -29,7 +29,7 @@ namespace BudgetManagementSystem.Repositories
                 .ToList();
         }
 
-        public DuesManagement GetById(string dueId)
+        public DuesManagement? GetById(string dueId)
         {
             return _context.DuesManagements
                 .Include(d => d.User)
@@ -39,6 +39,12 @@ namespace BudgetManagementSystem.Repositories
         public void Update(DuesManagement due)
         {
             _context.DuesManagements.Update(due);
+            _context.SaveChanges();
+        }
+
+        public void Delete(DuesManagement due)
+        {
+            _context.DuesManagements.Remove(due);
             _context.SaveChanges();
         }
     }

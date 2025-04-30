@@ -21,7 +21,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "DBTest", "DBTest", "{3CE44B
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DBTest", "DBTest\DBTest.csproj", "{505F1F77-609A-4BFA-B065-04B9BCAF3A11}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Program3", "Program3\Program3.csproj", "{188FC3EB-DED3-41CC-B781-A0CDD4AF6577}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BudgetManagementSystem", "Program3\BudgetManagementSystem.csproj", "{188FC3EB-DED3-41CC-B781-A0CDD4AF6577}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

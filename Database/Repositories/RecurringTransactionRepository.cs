@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace BudgetManagementSystem.Repositories
+namespace Database.Repositories
 {
     public class RecurringTransactionRepository : IRecurringTransactionRepository
     {
@@ -17,25 +17,55 @@ namespace BudgetManagementSystem.Repositories
 
         public void Add(RecurringTransaction transaction)
         {
-            _context.RecurringTransactions.Add(transaction);
-            _context.SaveChanges();
+            if (transaction != null)
+            {
+                _context.RecurringTransactions.Add(transaction);
+                _context.SaveChanges();
+            }
         }
 
-        public List<RecurringTransaction> GetByUserId(string userId)
+        public List<RecurringTransaction>? GetByUserId(string userId)
         {
+            if (string.IsNullOrWhiteSpace(userId))
+                return new List<RecurringTransaction>();
+
             return _context.RecurringTransactions
                 .Include(rt => rt.User)
                 .Include(rt => rt.Category)
+                .Include(rt => rt.Currency)
+                .Include(rt => rt.TransactionTags)
+                    .ThenInclude(tt => tt.Tag)
                 .Where(rt => rt.UserId == userId)
                 .ToList();
         }
 
-        public RecurringTransaction GetById(string transactionId)
+        public RecurringTransaction? GetById(string transactionId)
         {
             return _context.RecurringTransactions
                 .Include(rt => rt.User)
                 .Include(rt => rt.Category)
-                .FirstOrDefault(rt => rt.RecurringTransactionId == transactionId);
+                .Include(rt => rt.Currency)
+                .Include(rt => rt.TransactionTags)
+                    .ThenInclude(tt => tt.Tag)
+                .FirstOrDefault(rt => rt.TransactionId == transactionId);
+        }
+
+        public void Update(RecurringTransaction transaction)
+        {
+            if (transaction != null)
+            {
+                _context.RecurringTransactions.Update(transaction);
+                _context.SaveChanges();
+            }
+        }
+
+        public void Delete(RecurringTransaction transaction)
+        {
+            if (transaction != null)
+            {
+                _context.RecurringTransactions.Remove(transaction);
+                _context.SaveChanges();
+            }
         }
     }
 }

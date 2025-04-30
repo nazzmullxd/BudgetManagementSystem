@@ -3,8 +3,10 @@ using Database.Context;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
+using Database.Repositories;
 
-namespace BudgetManagementSystem.Repositories
+
+namespace Database.Repositories
 {
     public class BudgetGoalRepository : IBudgetGoalRepository
     {
@@ -21,7 +23,7 @@ namespace BudgetManagementSystem.Repositories
             _context.SaveChanges();
         }
 
-        public List<BudgetGoal> GetByUserId(string userId)
+        public List<BudgetGoal>? GetByUserId(string userId)
         {
             return _context.BudgetGoals
                 .Include(bg => bg.User)
@@ -30,7 +32,7 @@ namespace BudgetManagementSystem.Repositories
                 .ToList();
         }
 
-        public BudgetGoal GetById(string goalId)
+        public BudgetGoal? GetById(string goalId)
         {
             return _context.BudgetGoals
                 .Include(bg => bg.User)

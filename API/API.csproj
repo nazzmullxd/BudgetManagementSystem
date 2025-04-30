@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Business\Business.csproj" />
+    <ProjectReference Include="..\Program3\BudgetManagementSystem.csproj" />
   </ItemGroup>
 
 </Project>

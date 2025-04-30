@@ -3,8 +3,9 @@ using Database.Context;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
+using Database.Repositories;
 
-namespace BudgetManagementSystem.Repositories
+namespace Database.Repositories
 {
     public class BudgetAlertsRepository : IBudgetAlertsRepository
     {
@@ -17,20 +18,29 @@ namespace BudgetManagementSystem.Repositories
 
         public void Add(BudgetAlerts alert)
         {
-            _context.BudgetAlerts.Add(alert);
-            _context.SaveChanges();
+            if (alert != null)
+            {
+                _context.BudgetAlerts.Add(alert);
+                _context.SaveChanges();
+            }
         }
 
         public List<BudgetAlerts> GetByUserId(string userId)
         {
+            if (string.IsNullOrWhiteSpace(userId))
+                return new List<BudgetAlerts>();
+
             return _context.BudgetAlerts
                 .Include(ba => ba.User)
                 .Where(ba => ba.UserId == userId)
                 .ToList();
         }
 
-        public BudgetAlerts GetById(string alertId)
+        BudgetAlerts? IBudgetAlertsRepository.GetById(string alertId)
         {
+            if (string.IsNullOrWhiteSpace(alertId))
+                return null;
+
             return _context.BudgetAlerts
                 .Include(ba => ba.User)
                 .FirstOrDefault(ba => ba.BudgetAlertsId == alertId);
@@ -38,8 +48,11 @@ namespace BudgetManagementSystem.Repositories
 
         public void Update(BudgetAlerts alert)
         {
-            _context.BudgetAlerts.Update(alert);
-            _context.SaveChanges();
+            if (alert != null)
+            {
+                _context.BudgetAlerts.Update(alert);
+                _context.SaveChanges();
+            }
         }
     }
 }

@@ -1,9 +1,9 @@
-﻿using Database.Model;  // For User, TrackExpense, etc.
-using Database.Context;  // Change this from BudgetManagementSystem.DB_Context
-using Microsoft.EntityFrameworkCore;  // Add this for DbContext
+﻿using Database.Model;
+using Database.Context;
+using Microsoft.EntityFrameworkCore;
 using System.Linq;
 
-namespace BudgetManagementSystem.Repositories
+namespace Database.Repositories
 {
     public class UserRepository : IUserRepository
     {
@@ -20,7 +20,7 @@ namespace BudgetManagementSystem.Repositories
             _context.SaveChanges();
         }
 
-        public User GetById(string userId)
+        public User? GetById(string userId)
         {
             return _context.Users
                 .Include(u => u.Expenses)
@@ -37,7 +37,7 @@ namespace BudgetManagementSystem.Repositories
                 .FirstOrDefault(u => u.UserId == userId);
         }
 
-        public User GetByEmail(string email)
+        public User? GetByEmail(string email)
         {
             return _context.Users
                 .Include(u => u.Expenses)
@@ -57,6 +57,12 @@ namespace BudgetManagementSystem.Repositories
         public void Update(User user)
         {
             _context.Users.Update(user);
+            _context.SaveChanges();
+        }
+
+        public void Delete(User user)
+        {
+            _context.Users.Remove(user);
             _context.SaveChanges();
         }
     }

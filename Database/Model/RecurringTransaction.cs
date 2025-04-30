@@ -1,36 +1,39 @@
-﻿using System;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
+using System.Collections.Generic;
 
 namespace Database.Model
 {
     public class RecurringTransaction
     {
         [Key]
-        public string RecurringTransactionId { get; set; } = Guid.NewGuid().ToString();
+        public string TransactionId { get; set; } = Guid.NewGuid().ToString();
 
         [Required]
-        [MaxLength(50)]
-        public string TransactionType { get; set; } = string.Empty;
+        public string UserId { get; set; } = Guid.NewGuid().ToString();
+
+        public User? User { get; set; }
 
         [Required]
-        public decimal Amount { get; set; } = decimal.Zero;
+        public string CategoryId { get; set; } = Guid.NewGuid().ToString();
+
+        public ExpenseCategory? Category { get; set; }
 
         [Required]
-        [MaxLength(50)]
-        public string Frequency { get; set; } = string.Empty;
+        public string CurrencyId { get; set; } = Guid.NewGuid().ToString();
+
+        public Currency? Currency { get; set; }
+
+        [Required]
+        public decimal Amount { get; set; }
+
+        [Required]
+        public string Frequency { get; set; } = "Monthly";
 
         [Required]
         public DateTime StartDate { get; set; }
 
         public DateTime? EndDate { get; set; }
 
-        [MaxLength(100)]
-        public string Description { get; set; } = string.Empty;
-
-        public string UserId { get; set; } = string.Empty;
-        public User User { get; set; }
-
-        public string? ExpenseCategoryId { get; set; }
-        public ExpenseCategory? Category { get; set; }
+        public List<TransactionTag> TransactionTags { get; set; } = new List<TransactionTag>();
     }
 }

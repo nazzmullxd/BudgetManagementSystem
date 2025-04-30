@@ -38,11 +38,15 @@ namespace Database.Model
 
         [Required]
         public string UserId { get; set; } = string.Empty;
-        public User User { get; set; }
+
+        // Nullable navigation property
+        public User? User { get; set; }
 
         [Required]
         public string CurrencyId { get; set; } = string.Empty;
-        public Currency Currency { get; set; }
+
+        // Nullable navigation property
+        public Currency? Currency { get; set; }
 
         public List<TransactionTag> TransactionTags { get; set; } = new List<TransactionTag>();
     }

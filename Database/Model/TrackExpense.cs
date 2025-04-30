@@ -9,15 +9,14 @@ namespace Database.Model
         [Key]
         public string TrackExpenseId { get; set; } = Guid.NewGuid().ToString();
 
-        [Required]
-        [MaxLength(50)]
+        [Required, MaxLength(50)]
         public string ItemName { get; set; } = string.Empty;
 
         [Required]
         public decimal ItemPrice { get; set; } = decimal.Zero;
 
         [Required]
-        public decimal Quantity { get; set; } = 1.0M; // Renamed from ItemAmount
+        public decimal Quantity { get; set; } = 1.0M;
 
         public decimal TotalCost => ItemPrice * Quantity;
 
@@ -32,16 +31,19 @@ namespace Database.Model
 
         [Required]
         public string UserId { get; set; } = string.Empty;
-        public User User { get; set; }
+
+        public User? User { get; set; }
 
         [Required]
         public string ExpenseCategoryId { get; set; } = string.Empty;
-        public ExpenseCategory Category { get; set; }
+
+        public ExpenseCategory? Category { get; set; }
 
         [Required]
         public string CurrencyId { get; set; } = string.Empty;
-        public Currency Currency { get; set; }
 
-        public List<TransactionTag> TransactionTags { get; set; } = new List<TransactionTag>();
+        public Currency? Currency { get; set; }
+
+        public List<TransactionTag> TransactionTags { get; set; } = new();
     }
 }

@@ -8,8 +8,9 @@ namespace Database.Model
         public string TransactionTagId { get; set; } = Guid.NewGuid().ToString();
 
         [Required]
-        public string TagId { get; set; } = string.Empty;
-        public Tag Tag { get; set; }
+        public string TagId { get; set; } = Guid.NewGuid().ToString();
+
+        public Tag? Tag { get; set; }
 
         public string? TrackExpenseId { get; set; }
         public TrackExpense? Expense { get; set; }

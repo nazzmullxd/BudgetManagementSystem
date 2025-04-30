@@ -1,12 +1,13 @@
-﻿using Database.Model;  // For User
+﻿using Database.Model;
 
-namespace BudgetManagementSystem.Repositories
+namespace Database.Repositories
 {
     public interface IUserRepository
     {
         void Add(User user);
-        User GetById(string userId);
-        User GetByEmail(string email);
+        User? GetById(string userId);
+        User? GetByEmail(string email);
         void Update(User user);
+        void Delete(User user);
     }
 }

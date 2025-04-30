@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace BudgetManagementSystem.Repositories
+namespace Database.Repositories
 {
     public class TransactionTagRepository : ITransactionTagRepository
     {
@@ -21,7 +21,7 @@ namespace BudgetManagementSystem.Repositories
             _context.SaveChanges();
         }
 
-        public List<TransactionTag> GetByTagId(string tagId)
+        public List<TransactionTag>? GetByTagId(string tagId)
         {
             return _context.TransactionTags
                 .Include(tt => tt.Tag)
@@ -31,7 +31,7 @@ namespace BudgetManagementSystem.Repositories
                 .ToList();
         }
 
-        public List<TransactionTag> GetByExpenseId(string expenseId)
+        public List<TransactionTag>? GetByExpenseId(string expenseId)
         {
             return _context.TransactionTags
                 .Include(tt => tt.Tag)
@@ -41,7 +41,7 @@ namespace BudgetManagementSystem.Repositories
                 .ToList();
         }
 
-        public List<TransactionTag> GetByIncomeId(string incomeId)
+        public List<TransactionTag>? GetByIncomeId(string incomeId)
         {
             return _context.TransactionTags
                 .Include(tt => tt.Tag)
@@ -49,6 +49,18 @@ namespace BudgetManagementSystem.Repositories
                 .Include(tt => tt.Income)
                 .Where(tt => tt.TrackIncomeId == incomeId)
                 .ToList();
+        }
+
+        public void Update(TransactionTag transactionTag)
+        {
+            _context.TransactionTags.Update(transactionTag);
+            _context.SaveChanges();
+        }
+
+        public void Delete(TransactionTag transactionTag)
+        {
+            _context.TransactionTags.Remove(transactionTag);
+            _context.SaveChanges();
         }
     }
 }

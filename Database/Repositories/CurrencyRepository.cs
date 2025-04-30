@@ -3,8 +3,10 @@ using Database.Context;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
+using Database.Repositories;
 
-namespace BudgetManagementSystem.Repositories
+
+namespace Database.Repositories
 {
     public class CurrencyRepository : ICurrencyRepository
     {
@@ -21,13 +23,13 @@ namespace BudgetManagementSystem.Repositories
             _context.SaveChanges();
         }
 
-        public Currency GetById(string currencyId)
+        public Currency? GetById(string currencyId)
         {
             return _context.Currencies
                 .FirstOrDefault(c => c.CurrencyId == currencyId);
         }
 
-        public List<Currency> GetAll()
+        public List<Currency>? GetAll()
         {
             return _context.Currencies.ToList();
         }

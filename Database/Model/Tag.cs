@@ -8,8 +8,7 @@ namespace Database.Model
         [Key]
         public string TagId { get; set; } = Guid.NewGuid().ToString();
 
-        [Required]
-        [MaxLength(50)]
+        [Required, MaxLength(50)]
         public string TagName { get; set; } = string.Empty;
 
         [MaxLength(100)]
@@ -17,8 +16,9 @@ namespace Database.Model
 
         [Required]
         public string UserId { get; set; } = string.Empty;
-        public User User { get; set; }
 
-        public List<TransactionTag> TransactionTags { get; set; } = new List<TransactionTag>();
+        public User? User { get; set; }
+
+        public List<TransactionTag> TransactionTags { get; set; } = new();
     }
 }

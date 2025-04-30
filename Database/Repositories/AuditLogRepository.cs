@@ -1,10 +1,12 @@
 ﻿using Database.Model;
 using Database.Context;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using Database.Repositories;
 
-namespace BudgetManagementSystem.Repositories
+namespace Database.Repositories
 {
     public class AuditLogRepository : IAuditLogRepository
     {
@@ -21,11 +23,19 @@ namespace BudgetManagementSystem.Repositories
             _context.SaveChanges();
         }
 
-        public List<AuditLog> GetByUserId(string userId)
+        public List<AuditLog>? GetByUserId(string userId)
         {
             return _context.AuditLogs
                 .Include(a => a.User)
                 .Where(a => a.UserId == userId)
+                .ToList();
+        }
+
+        public List<AuditLog>? GetByDateRange(DateTime startDate, DateTime endDate)
+        {
+            return _context.AuditLogs
+                .Include(a => a.User)
+                .Where(a => a.Timestamp >= startDate && a.Timestamp <= endDate)
                 .ToList();
         }
     }

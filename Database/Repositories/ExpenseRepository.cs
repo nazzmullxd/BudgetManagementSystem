@@ -1,10 +1,13 @@
-﻿using Database.Model;  // For TrackExpense, User, etc.
-using Database.Context;  // Change this
-using Microsoft.EntityFrameworkCore;  // Add this
+﻿using Database.Model;
+using Database.Context;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-namespace BudgetManagementSystem.Repositories
+using Database.Repositories;
+
+
+namespace Database.Repositories
 {
     public class ExpenseRepository : IExpenseRepository
     {
@@ -21,7 +24,7 @@ namespace BudgetManagementSystem.Repositories
             _context.SaveChanges();
         }
 
-        public List<TrackExpense> GetByUserId(string userId)
+        public List<TrackExpense>? GetByUserId(string userId)
         {
             return _context.TrackExpenses
                 .Include(e => e.User)
@@ -33,7 +36,7 @@ namespace BudgetManagementSystem.Repositories
                 .ToList();
         }
 
-        public List<TrackExpense> GetByUserIdAndDateRange(string userId, DateTime startDate, DateTime endDate)
+        public List<TrackExpense>? GetByUserIdAndDateRange(string userId, DateTime startDate, DateTime endDate)
         {
             return _context.TrackExpenses
                 .Include(e => e.User)
@@ -43,6 +46,18 @@ namespace BudgetManagementSystem.Repositories
                 .ThenInclude(tt => tt.Tag)
                 .Where(e => e.UserId == userId && e.TransactionDate >= startDate && e.TransactionDate <= endDate)
                 .ToList();
+        }
+
+        public void Update(TrackExpense expense)
+        {
+            _context.TrackExpenses.Update(expense);
+            _context.SaveChanges();
+        }
+
+        public void Delete(TrackExpense expense)
+        {
+            _context.TrackExpenses.Remove(expense);
+            _context.SaveChanges();
         }
     }
 }

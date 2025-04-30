@@ -1,14 +1,14 @@
 ﻿using Database.Model;
-using System;
 using System.Collections.Generic;
 
-namespace BudgetManagementSystem.Repositories
+namespace Database.Repositories
 {
     public interface IReminderRepository
     {
         void Add(Reminder reminder);
-        List<Reminder> GetByUserId(string userId);
-        List<Reminder> GetUpcomingReminders(string userId, DateTime upcomingDate);
+        List<Reminder>? GetByUserId(string userId);
+        Reminder? GetById(string reminderId);
         void Update(Reminder reminder);
+        void Delete(Reminder reminder);
     }
 }

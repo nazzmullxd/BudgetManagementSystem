@@ -8,15 +8,13 @@ namespace Database.Model
         [Key]
         public string AuditLogId { get; set; } = Guid.NewGuid().ToString();
 
-        [Required]
-        [MaxLength(50)]
+        [Required, MaxLength(50)]
         public string Action { get; set; } = string.Empty;
 
         [Required]
         public DateTime Timestamp { get; set; } = DateTime.Now;
 
-        [Required]
-        [MaxLength(100)]
+        [Required, MaxLength(100)]
         public string EntityType { get; set; } = string.Empty;
 
         [Required]
@@ -27,6 +25,8 @@ namespace Database.Model
 
         [Required]
         public string UserId { get; set; } = string.Empty;
-        public User User { get; set; }
+
+        // Nullable navigation property
+        public User? User { get; set; }
     }
 }
