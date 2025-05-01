@@ -1,10 +1,174 @@
 ﻿@page
-@model IndexModel
+@model BudgetManagementSystem.Pages.IndexModel
+
 @{
-    ViewData["Title"] = "Home page";
+    ViewData["Title"] = "Dashboard";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Budget Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        .card-hover { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .card-hover:hover { transform: translateY(-8px); box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1); }
+        .fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans antialiased">
+    <div class="container mx-auto p-6">
+        <!-- Header -->
+        <h1 class="text-3xl font-bold text-gray-800 mb-6 fade-in">Dashboard</h1>
+
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-xl shadow-md card-hover">
+                <h2 class="text-lg font-semibold text-green-600">Total Income</h2>
+                <p class="text-2xl font-bold text-gray-800 mt-2" id="total-income">$0.00</p>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-md card-hover">
+                <h2 class="text-lg font-semibold text-red-600">Total Expenses</h2>
+                <p class="text-2xl font-bold text-gray-800 mt-2" id="total-expenses">$0.00</p>
+            </div>
+        </div>
+
+        <!-- Chart -->
+        <div class="bg-white p-6 rounded-xl shadow-md mb-8 fade-in">
+            <h2 class="text-lg font-semibold text-gray-700 mb-4">Monthly Overview</h2>
+            <canvas id="monthly-chart" height="100"></canvas>
+        </div>
+
+        <!-- Transactions Table -->
+        <div class="bg-white p-6 rounded-xl shadow-md fade-in">
+            <h2 class="text-lg font-semibold text-gray-700 mb-4">Recent Transactions</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="text-gray-600 border-b">
+                            <th class="py-3 px-4">Type</th>
+                            <th class="py-3 px-4">Amount</th>
+                            <th class="py-3 px-4">Date</th>
+                            <th class="py-3 px-4">Description</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactions-table" class="text-gray-700">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function () {
+            const token = localStorage.getItem("authToken");
+            if (!token) {
+                window.location.href = "/Login";
+                return;
+            }
+
+            // Fetch and display expenses
+            $.ajax({
+                url: "/api/expenses",
+                type: "GET",
+                headers: { "Authorization": "Bearer " + token },
+                success: function (expenses) {
+                    const totalExpenses = expenses.reduce((sum, exp) => sum + (exp.itemPrice * exp.quantity), 0);
+                    $("#total-expenses").text(`$${totalExpenses.toFixed(2)}`);
+
+                    expenses.forEach(exp => {
+                        $("#transactions-table").append(`
+                            <tr class="border-b hover:bg-gray-50 transition-colors">
+                                <td class="py-3 px-4">Expense</td>
+                                <td class="py-3 px-4 text-red-600">$${-(exp.itemPrice * exp.quantity).toFixed(2)}</td>
+                                <td class="py-3 px-4">${new Date(exp.transactionDate).toLocaleDateString()}</td>
+                                <td class="py-3 px-4">${exp.itemName}</td>
+                            </tr>
+                        `);
+                    });
+
+                    const monthlyExpenses = calculateMonthlyData(expenses, "expense");
+                    updateChart(monthlyExpenses, monthlyIncomes);
+                },
+                error: function (xhr) {
+                    if (xhr.status === 401) window.location.href = "/Login";
+                }
+            });
+
+            // Fetch and display incomes
+            $.ajax({
+                url: "/api/incomes",
+                type: "GET",
+                headers: { "Authorization": "Bearer " + token },
+                success: function (incomes) {
+                    const totalIncomes = incomes.reduce((sum, inc) => sum + inc.amount, 0);
+                    $("#total-income").text(`$${totalIncomes.toFixed(2)}`);
+
+                    incomes.forEach(inc => {
+                        $("#transactions-table").append(`
+                            <tr class="border-b hover:bg-gray-50 transition-colors">
+                                <td class="py-3 px-4">Income</td>
+                                <td class="py-3 px-4 text-green-600">$${inc.amount.toFixed(2)}</td>
+                                <td class="py-3 px-4">${new Date(inc.transactionDate).toLocaleDateString()}</td>
+                                <td class="py-3 px-4">${inc.description}</td>
+                            </tr>
+                        `);
+                    });
+
+                    const monthlyIncomes = calculateMonthlyData(incomes, "income");
+                    updateChart(monthlyExpenses, monthlyIncomes);
+                },
+                error: function (xhr) {
+                    if (xhr.status === 401) window.location.href = "/Login";
+                }
+            });
+
+            // Calculate monthly data for chart
+            function calculateMonthlyData(transactions, type) {
+                const monthlyData = {};
+                transactions.forEach(t => {
+                    const date = new Date(t.transactionDate);
+                    const month = date.toLocaleString('default', { month: 'long' });
+                    const amount = type === "expense" ? (t.itemPrice * t.quantity) : t.amount;
+                    monthlyData[month] = (monthlyData[month] || 0) + amount;
+                });
+                return monthlyData;
+            }
+
+            // Update chart with data
+            let monthlyExpenses = {}, monthlyIncomes = {};
+            function updateChart(expenses, incomes) {
+                monthlyExpenses = expenses || {};
+                monthlyIncomes = incomes || {};
+                const labels = Array.from(new Set([...Object.keys(monthlyExpenses), ...Object.keys(monthlyIncomes)]));
+                const expenseData = labels.map(label => monthlyExpenses[label] || 0);
+                const incomeData = labels.map(label => monthlyIncomes[label] || 0);
+
+                const ctx = document.getElementById('monthly-chart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            { label: 'Expenses', data: expenseData, backgroundColor: 'rgba(239, 68, 68, 0.8)', borderRadius: 5 },
+                            { label: 'Incomes', data: incomeData, backgroundColor: 'rgba(16, 185, 129, 0.8)', borderRadius: 5 }
+                        ]
+                    },
+                    options: {
+                        scales: {
+                            y: { beginAtZero: true, grid: { color: 'rgba(0, 0, 0, 0.05)' } },
+                            x: { grid: { display: false } }
+                        },
+                        plugins: { legend: { position: 'top', labels: { font: { size: 14 } } } }
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

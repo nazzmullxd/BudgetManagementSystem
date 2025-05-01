@@ -10,11 +10,14 @@
     <PackageReference Include="MailKit" Version="4.11.0" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="6.0.1" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="6.0.1" />
+	  <PackageReference Include="MailKit" Version="4.11.0" />
+	  <PackageReference Include="Microsoft.Extensions.Logging" Version="6.0.1" />
+	  <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="6.0.1" />
+	  <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.2" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Database\Database.csproj" />
-	  <ProjectReference Include="..\BudgetManagementSystem\BudgetManagementSystem.csproj" />
   </ItemGroup>
 
 </Project>

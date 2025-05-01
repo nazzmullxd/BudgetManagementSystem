@@ -1,140 +1,125 @@
 ﻿using Database.Model;
-using BudgetManagementSystem.Repositories;
+using Database.Repositories;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using Business.Interfeces;
 
 namespace Business.Services
 {
     public class TagService : BaseService, ITagService
     {
         private readonly ITagRepository _tagRepository;
-        private readonly ITransactionTagRepository _transactionTagRepository;
+        private readonly IAuditService _auditService;
         private readonly ILogger<TagService> _logger;
 
         public TagService(
             ITagRepository tagRepository,
-            ITransactionTagRepository transactionTagRepository,
             IUserRepository userRepository,
             IAuditService auditService,
             ILogger<TagService> logger)
-            : base(userRepository, auditService)
+            : base(userRepository)
         {
             _tagRepository = tagRepository;
-            _transactionTagRepository = transactionTagRepository;
+            _auditService = auditService;
             _logger = logger;
         }
 
-        public void CreateTag(string userId, string tagName)
+        public void CreateTag(Tag tag)
         {
-            _logger.LogInformation("Creating tag for user {UserId}: {TagName}", userId, tagName);
+            _logger.LogInformation("Creating tag for user {UserId}", tag?.UserId);
 
-            ValidateUser(userId);
-
-            if (string.IsNullOrWhiteSpace(tagName))
+            if (tag == null)
             {
-                _logger.LogError("CreateTag failed: Tag name is required for user {UserId}", userId);
-                throw new ArgumentException("Tag name is required.");
+                _logger.LogError("CreateTag failed: Tag cannot be null");
+                throw new ArgumentNullException(nameof(tag));
             }
 
-            var existingTag = _tagRepository.GetByUserId(userId)
-                .FirstOrDefault(t => t.TagName.Equals(tagName, StringComparison.OrdinalIgnoreCase));
-
-            if (existingTag != null)
-            {
-                _logger.LogError("CreateTag failed: Tag {TagName} already exists for user {UserId}", tagName, userId);
-                throw new ArgumentException("A tag with this name already exists for the user.");
-            }
-
-            var tag = new Tag
-            {
-                UserId = userId,
-                TagName = tagName,
-                CreatedAt = DateTime.Now,
-                UpdatedAt = DateTime.Now
-            };
+            ValidateUser(tag.UserId);
 
             _tagRepository.Add(tag);
-            LogAction(_logger, userId, "Tag Created", $"Tag {tagName} created");
+            _auditService.LogAction(tag.UserId, "CreateTag", $"Tag created with ID {tag.TagId}");
+            _logger.LogInformation("Tag created for user {UserId} with ID {TagId}", tag.UserId, tag.TagId);
         }
 
-        public void UpdateTag(string tagId, string tagName)
-        {
-            _logger.LogInformation("Updating tag {TagId}", tagId);
-
-            if (string.IsNullOrWhiteSpace(tagId))
-            {
-                _logger.LogError("UpdateTag failed: Tag ID is required.");
-                throw new ArgumentException("Tag ID is required.");
-            }
-
-            if (string.IsNullOrWhiteSpace(tagName))
-            {
-                _logger.LogError("UpdateTag failed: Tag name is required for tag {TagId}", tagId);
-                throw new ArgumentException("Tag name is required.");
-            }
-
-            var tag = _tagRepository.GetById(tagId);
-            if (tag == null)
-            {
-                _logger.LogError("UpdateTag failed: Tag {TagId} not found.", tagId);
-                throw new ArgumentException("Tag not found.");
-            }
-
-            var existingTag = _tagRepository.GetByUserId(tag.UserId)
-                .FirstOrDefault(t => t.TagName.Equals(tagName, StringComparison.OrdinalIgnoreCase) && t.TagId != tagId);
-
-            if (existingTag != null)
-            {
-                _logger.LogError("UpdateTag failed: Tag {TagName} already exists for user {UserId}", tagName, tag.UserId);
-                throw new ArgumentException("A tag with this name already exists for the user.");
-            }
-
-            tag.TagName = tagName;
-            tag.UpdatedAt = DateTime.Now;
-
-            _tagRepository.Update(tag);
-            LogAction(_logger, tag.UserId, "Tag Updated", $"Tag {tagId} updated to {tagName}");
-        }
-
-        public void DeleteTag(string tagId)
-        {
-            _logger.LogInformation("Deleting tag {TagId}", tagId);
-
-            if (string.IsNullOrWhiteSpace(tagId))
-            {
-                _logger.LogError("DeleteTag failed: Tag ID is required.");
-                throw new ArgumentException("Tag ID is required.");
-            }
-
-            var tag = _tagRepository.GetById(tagId);
-            if (tag == null)
-            {
-                _logger.LogError("DeleteTag failed: Tag {TagId} not found.", tagId);
-                throw new ArgumentException("Tag not found.");
-            }
-
-            var transactionTags = _transactionTagRepository.GetByTagId(tagId);
-            foreach (var transactionTag in transactionTags)
-            {
-                _transactionTagRepository.Delete(transactionTag.TransactionTagId);
-            }
-
-            _tagRepository.Delete(tag);
-            LogAction(_logger, tag.UserId, "Tag Deleted", $"Tag {tagId} deleted");
-        }
-
-        public List<Tag> GetTagsByUserId(string userId)
+        public List<Tag>? GetTagsByUserId(string userId)
         {
             _logger.LogInformation("Retrieving tags for user {UserId}", userId);
 
             ValidateUser(userId);
 
             var tags = _tagRepository.GetByUserId(userId);
-            _logger.LogInformation("Retrieved {Count} tags for user {UserId}", tags.Count, userId);
+            _auditService.LogAction(userId, "GetTagsByUserId", $"Retrieved {tags?.Count ?? 0} tags");
+            _logger.LogInformation("Retrieved {Count} tags for user {UserId}", tags?.Count ?? 0, userId);
             return tags;
+        }
+
+        public Tag? GetTagById(string tagId)
+        {
+            _logger.LogInformation("Retrieving tag with ID {TagId}", tagId);
+
+            if (string.IsNullOrWhiteSpace(tagId))
+            {
+                _logger.LogError("GetTagById failed: Tag ID is required");
+                throw new ArgumentException("Tag ID is required.", nameof(tagId));
+            }
+
+            var tag = _tagRepository.GetById(tagId);
+            if (tag == null)
+            {
+                _logger.LogWarning("Tag with ID {TagId} not found", tagId);
+            }
+            else
+            {
+                _logger.LogInformation("Retrieved tag with ID {TagId}", tagId);
+                _auditService.LogAction(tag.UserId, "GetTagById", $"Retrieved tag with ID {tagId}");
+            }
+            return tag;
+        }
+
+        public void UpdateTag(Tag tag)
+        {
+            _logger.LogInformation("Updating tag with ID {TagId}", tag?.TagId);
+
+            if (tag == null)
+            {
+                _logger.LogError("UpdateTag failed: Tag cannot be null");
+                throw new ArgumentNullException(nameof(tag));
+            }
+
+            ValidateUser(tag.UserId);
+
+            var existingTag = _tagRepository.GetById(tag.TagId);
+            if (existingTag == null)
+            {
+                _logger.LogError("UpdateTag failed: Tag with ID {TagId} not found for user {UserId}", tag.TagId, tag.UserId);
+                throw new KeyNotFoundException($"Tag with ID {tag.TagId} not found.");
+            }
+
+            _tagRepository.Update(tag);
+            _auditService.LogAction(tag.UserId, "UpdateTag", $"Tag updated with ID {tag.TagId}");
+            _logger.LogInformation("Tag with ID {TagId} updated", tag.TagId);
+        }
+
+        public void DeleteTag(string tagId)
+        {
+            _logger.LogInformation("Deleting tag with ID {TagId}", tagId);
+
+            if (string.IsNullOrWhiteSpace(tagId))
+            {
+                _logger.LogError("DeleteTag failed: Tag ID is required");
+                throw new ArgumentException("Tag ID is required.", nameof(tagId));
+            }
+
+            var tag = _tagRepository.GetById(tagId);
+            if (tag == null)
+            {
+                _logger.LogError("DeleteTag failed: Tag with ID {TagId} not found", tagId);
+                throw new KeyNotFoundException($"Tag with ID {tagId} not found.");
+            }
+
+            ValidateUser(tag.UserId);
+
+            _tagRepository.Delete(tag);
+            _auditService.LogAction(tag.UserId, "DeleteTag", $"Tag deleted with ID {tagId}");
+            _logger.LogInformation("Tag with ID {TagId} deleted", tagId);
         }
     }
 }

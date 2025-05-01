@@ -1,8 +1,6 @@
-﻿using Database.Model;
-using Database.Context;
+﻿using Database.Context;
+using Database.Model;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Database.Repositories
 {
@@ -49,6 +47,15 @@ namespace Database.Repositories
                 .Include(tt => tt.Income)
                 .Where(tt => tt.TrackIncomeId == incomeId)
                 .ToList();
+        }
+
+        public TransactionTag? GetById(string transactionTagId)
+        {
+            return _context.TransactionTags
+                .Include(tt => tt.Tag)
+                .Include(tt => tt.Expense)
+                .Include(tt => tt.Income)
+                .FirstOrDefault(tt => tt.TransactionTagId == transactionTagId);
         }
 
         public void Update(TransactionTag transactionTag)

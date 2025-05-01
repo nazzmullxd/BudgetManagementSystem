@@ -1,5 +1,4 @@
 ﻿using Database.Model;
-using System.Collections.Generic;
 
 namespace Database.Repositories
 {

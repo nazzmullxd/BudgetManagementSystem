@@ -1,11 +1,10 @@
-﻿using Database.Model;
-using Database.Context;
-using BudgetManagementSystem.Repositories;  // This is correct
+﻿using Database.Context;
+using Database.Model;
+using Database.Repositories;  // This is correct
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using System;
 
-namespace BudgetManagementSystem
+namespace Database
 {
     class Program
     {

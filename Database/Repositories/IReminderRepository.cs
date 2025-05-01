@@ -1,5 +1,4 @@
 ﻿using Database.Model;
-using System.Collections.Generic;
 
 namespace Database.Repositories
 {
@@ -10,5 +9,6 @@ namespace Database.Repositories
         Reminder? GetById(string reminderId);
         void Update(Reminder reminder);
         void Delete(Reminder reminder);
+        List<Reminder> GetUpcomingReminders(string userId, DateTime endDate); // Added method
     }
 }

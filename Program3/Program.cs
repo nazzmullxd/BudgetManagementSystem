@@ -1,12 +1,8 @@
 ﻿using Business.Services;
-using BudgetManagementSystem.Repositories;
-using Database.Model;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
 
-namespace BudgetManagementSystem
+namespace Database
 {
     class Program
     {

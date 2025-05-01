@@ -1,9 +1,5 @@
-﻿using Database.Model;
-using Database.Context;
-using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using System.Linq;
-using Database.Repositories;
+﻿using Database.Context;
+using Database.Model;
 
 
 namespace Database.Repositories

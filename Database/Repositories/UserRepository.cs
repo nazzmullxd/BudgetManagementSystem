@@ -1,7 +1,6 @@
-﻿using Database.Model;
-using Database.Context;
+﻿using Database.Context;
+using Database.Model;
 using Microsoft.EntityFrameworkCore;
-using System.Linq;
 
 namespace Database.Repositories
 {
@@ -23,34 +22,30 @@ namespace Database.Repositories
         public User? GetById(string userId)
         {
             return _context.Users
-                .Include(u => u.Expenses)
-                .Include(u => u.Incomes)
-                .Include(u => u.Categories)
-                .Include(u => u.Dues)
-                .Include(u => u.BudgetAlerts)
-                .Include(u => u.Reminders)
-                .Include(u => u.RecurringTransactions)
-                .Include(u => u.Tags)
-                .Include(u => u.AuditLogs)
+                .Include(u => u.TrackExpenses)
+                .Include(u => u.TrackIncomes)
                 .Include(u => u.BudgetGoals)
-                .Include(u => u.PreferredCurrency)
+                .Include(u => u.ExpenseCategories)
+                .Include(u => u.BudgetAlerts)
+                .Include(u => u.Dues)
+                .Include(u => u.RecurringTransactions)
+                .Include(u => u.AuditLogs)
+                .Include(u => u.Tags)
                 .FirstOrDefault(u => u.UserId == userId);
         }
 
         public User? GetByEmail(string email)
         {
             return _context.Users
-                .Include(u => u.Expenses)
-                .Include(u => u.Incomes)
-                .Include(u => u.Categories)
-                .Include(u => u.Dues)
-                .Include(u => u.BudgetAlerts)
-                .Include(u => u.Reminders)
-                .Include(u => u.RecurringTransactions)
-                .Include(u => u.Tags)
-                .Include(u => u.AuditLogs)
+                .Include(u => u.TrackExpenses)
+                .Include(u => u.TrackIncomes)
                 .Include(u => u.BudgetGoals)
-                .Include(u => u.PreferredCurrency)
+                .Include(u => u.ExpenseCategories)
+                .Include(u => u.BudgetAlerts)
+                .Include(u => u.Dues)
+                .Include(u => u.RecurringTransactions)
+                .Include(u => u.AuditLogs)
+                .Include(u => u.Tags)
                 .FirstOrDefault(u => u.Email == email);
         }
 

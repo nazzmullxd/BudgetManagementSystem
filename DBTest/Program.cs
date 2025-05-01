@@ -1,5 +1,4 @@
-﻿using System;
-using Database.Model;
+﻿using Database.Model;
 
 namespace Database.Context
 {

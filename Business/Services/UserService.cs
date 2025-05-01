@@ -1,188 +1,106 @@
 ﻿using Database.Model;
-using BudgetManagementSystem.Repositories;
+using Database.Repositories;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
 
 namespace Business.Services
 {
     public class UserService : BaseService, IUserService
     {
-        private readonly IUserRepository _userRepo;
+        private readonly IUserRepository _userRepository;
+        private readonly IAuditService _auditService;
         private readonly ILogger<UserService> _logger;
 
         public UserService(
             IUserRepository userRepository,
             IAuditService auditService,
             ILogger<UserService> logger)
-            : base(userRepository, auditService)
+            : base(userRepository)
         {
-            _userRepo = userRepository;
+            _userRepository = userRepository;
+            _auditService = auditService;
             _logger = logger;
         }
 
-        public void RegisterUser(string name, string email, string password)
+        public void CreateUser(User user)
         {
-            _logger.LogInformation("Registering user with email: {Email}", email);
+            _logger.LogInformation("Creating user with ID {UserId}", user?.UserId);
 
-            if (string.IsNullOrWhiteSpace(name))
+            if (user == null)
             {
-                _logger.LogError("RegisterUser failed: Name is required");
-                throw new ArgumentException("Name is required.");
+                _logger.LogError("CreateUser failed: User cannot be null");
+                throw new ArgumentNullException(nameof(user));
             }
 
-            if (string.IsNullOrWhiteSpace(email))
-            {
-                _logger.LogError("RegisterUser failed: Email is required");
-                throw new ArgumentException("Email is required.");
-            }
-
-            if (string.IsNullOrWhiteSpace(password))
-            {
-                _logger.LogError("RegisterUser failed: Password is required");
-                throw new ArgumentException("Password is required.");
-            }
-
-            var existingUser = _userRepo.GetByEmail(email);
-            if (existingUser != null)
-            {
-                _logger.LogError("RegisterUser failed: Email {Email} is already in use", email);
-                throw new ArgumentException("Email is already in use.");
-            }
-
-            var user = new User
-            {
-                Name = name,
-                Email = email,
-                PasswordHash = HashPassword(password),
-                CreatedAt = DateTime.Now,
-                UpdatedAt = DateTime.Now,
-                IsActive = true
-            };
-
-            _userRepo.Add(user);
-            _auditService.LogAction(user.UserId, "RegisterUser", $"User registered: {email}");
-            _logger.LogInformation("User registered successfully: {Email}", email);
+            _userRepository.Add(user);
+            _auditService.LogAction(user.UserId, "CreateUser", $"User created with ID {user.UserId}");
+            _logger.LogInformation("User created with ID {UserId}", user.UserId);
         }
 
-        public User GetUserById(string userId)
+        public User? GetUserById(string userId)
         {
-            _logger.LogInformation("Retrieving user by ID: {UserId}", userId);
+            _logger.LogInformation("Retrieving user with ID {UserId}", userId);
 
             if (string.IsNullOrWhiteSpace(userId))
             {
                 _logger.LogError("GetUserById failed: User ID is required");
-                throw new ArgumentException("User ID is required.");
+                throw new ArgumentException("User ID is required.", nameof(userId));
             }
 
-            var user = _userRepo.GetById(userId);
-            if (user == null || !user.IsActive)
+            var user = _userRepository.GetById(userId);
+            if (user == null)
             {
-                _logger.LogWarning("GetUserById failed: User {UserId} not found or inactive", userId);
-                throw new ArgumentException("User not found or inactive.");
+                _logger.LogWarning("User with ID {UserId} not found", userId);
             }
-
-            _logger.LogInformation("User retrieved: {UserId}", userId);
+            else
+            {
+                _auditService.LogAction(userId, "GetUserById", $"Retrieved user with ID {userId}");
+                _logger.LogInformation("Retrieved user with ID {UserId}", userId);
+            }
             return user;
         }
 
-        public User GetUserByEmail(string email)
+        public void UpdateUser(User user)
         {
-            _logger.LogInformation("Retrieving user by email: {Email}", email);
+            _logger.LogInformation("Updating user with ID {UserId}", user?.UserId);
 
-            if (string.IsNullOrWhiteSpace(email))
+            if (user == null)
             {
-                _logger.LogError("GetUserByEmail failed: Email is required");
-                throw new ArgumentException("Email is required.");
+                _logger.LogError("UpdateUser failed: User cannot be null");
+                throw new ArgumentNullException(nameof(user));
             }
 
-            var user = _userRepo.GetByEmail(email);
-            if (user == null || !user.IsActive)
+            var existingUser = _userRepository.GetById(user.UserId);
+            if (existingUser == null)
             {
-                _logger.LogWarning("GetUserByEmail failed: User with email {Email} not found or inactive", email);
-                throw new ArgumentException("User not found or inactive.");
+                _logger.LogError("UpdateUser failed: User with ID {UserId} not found", user.UserId);
+                throw new KeyNotFoundException($"User with ID {user.UserId} not found.");
             }
 
-            _logger.LogInformation("User retrieved: {Email}", email);
-            return user;
+            _userRepository.Update(user);
+            _auditService.LogAction(user.UserId, "UpdateUser", $"User updated with ID {user.UserId}");
+            _logger.LogInformation("User with ID {UserId} updated", user.UserId);
         }
 
-        public List<User> GetAllUsers()
+        public void DeleteUser(string userId)
         {
-            _logger.LogInformation("Retrieving all active users");
+            _logger.LogInformation("Deleting user with ID {UserId}", userId);
 
-            var users = _userRepo.GetAll();
-            var activeUsers = users.FindAll(u => u.IsActive);
-
-            _logger.LogInformation("Retrieved {Count} active users", activeUsers.Count);
-            return activeUsers;
-        }
-
-        public void UpdateUser(string userId, string name, string email, string password)
-        {
-            _logger.LogInformation("Updating user: {UserId}", userId);
-
-            var user = _userRepo.GetById(userId);
-            if (user == null || !user.IsActive)
+            if (string.IsNullOrWhiteSpace(userId))
             {
-                _logger.LogError("UpdateUser failed: User {UserId} not found or inactive", userId);
-                throw new ArgumentException("User not found or inactive.");
+                _logger.LogError("DeleteUser failed: User ID is required");
+                throw new ArgumentException("User ID is required.", nameof(userId));
             }
 
-            if (string.IsNullOrWhiteSpace(name))
+            var user = _userRepository.GetById(userId);
+            if (user == null)
             {
-                _logger.LogError("UpdateUser failed: Name is required for user {UserId}", userId);
-                throw new ArgumentException("Name is required.");
+                _logger.LogError("DeleteUser failed: User with ID {UserId} not found", userId);
+                throw new KeyNotFoundException($"User with ID {userId} not found.");
             }
 
-            if (string.IsNullOrWhiteSpace(email))
-            {
-                _logger.LogError("UpdateUser failed: Email is required for user {UserId}", userId);
-                throw new ArgumentException("Email is required.");
-            }
-
-            var existingUser = _userRepo.GetByEmail(email);
-            if (existingUser != null && existingUser.UserId != userId)
-            {
-                _logger.LogError("UpdateUser failed: Email {Email} is already in use by another user", email);
-                throw new ArgumentException("Email is already in use by another user.");
-            }
-
-            user.Name = name;
-            user.Email = email;
-            if (!string.IsNullOrWhiteSpace(password))
-            {
-                user.PasswordHash = HashPassword(password);
-            }
-            user.UpdatedAt = DateTime.Now;
-
-            _userRepo.Update(user);
-            _auditService.LogAction(userId, "UpdateUser", $"User updated: {email}");
-            _logger.LogInformation("User {UserId} updated successfully", userId);
-        }
-
-        public void DeactivateUser(string userId)
-        {
-            _logger.LogInformation("Deactivating user: {UserId}", userId);
-
-            var user = _userRepo.GetById(userId);
-            if (user == null || !user.IsActive)
-            {
-                _logger.LogError("DeactivateUser failed: User {UserId} not found or already inactive", userId);
-                throw new ArgumentException("User not found or already inactive.");
-            }
-
-            user.IsActive = false;
-            user.UpdatedAt = DateTime.Now;
-
-            _userRepo.Update(user);
-            _auditService.LogAction(userId, "DeactivateUser", $"User deactivated: {user.Email}");
-            _logger.LogInformation("User {UserId} deactivated successfully", userId);
-        }
-
-        private static string HashPassword(string password)
-        {
-            return Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(password));
+            _userRepository.Delete(user);
+            _auditService.LogAction(userId, "DeleteUser", $"User deleted with ID {userId}");
+            _logger.LogInformation("User with ID {UserId} deleted", userId);
         }
     }
 }

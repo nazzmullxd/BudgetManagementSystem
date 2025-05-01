@@ -1,9 +1,6 @@
-﻿using Database.Model;
-using Database.Context;
+﻿using Database.Context;
+using Database.Model;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using System.Linq;
-using Database.Repositories;
 
 namespace Database.Repositories
 {
@@ -47,6 +44,13 @@ namespace Database.Repositories
         {
             _context.Reminders.Remove(reminder);
             _context.SaveChanges();
+        }
+        public List<Reminder> GetUpcomingReminders(string userId, DateTime endDate)
+        {
+            return _context.Reminders
+                .Include(r => r.User)
+                .Where(r => r.UserId == userId && r.DueDate <= endDate)
+                .ToList();
         }
     }
 }
