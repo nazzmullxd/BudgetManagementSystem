@@ -1,0 +1,244 @@
+@page
+@model WEB.Pages.LoginModel
+
+@{
+    ViewData["Title"] = "Login";
+    Layout = null; // Use no layout for auth pages
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login - Budget Management System</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        
+        .auth-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            overflow: hidden;
+            max-width: 400px;
+            width: 100%;
+        }
+        
+        .auth-header {
+            background: linear-gradient(135deg, #2563eb, #3b82f6);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        .auth-body {
+            padding: 2rem;
+        }
+        
+        .form-control:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #2563eb, #3b82f6);
+            border: none;
+            border-radius: 10px;
+            padding: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #1d4ed8, #2563eb);
+            transform: translateY(-1px);
+        }
+        
+        .form-floating > .form-control {
+            border-radius: 10px;
+        }
+        
+        .alert {
+            border-radius: 10px;
+            border: none;
+        }
+        
+        .auth-links {
+            text-align: center;
+            margin-top: 1.5rem;
+        }
+        
+        .auth-links a {
+            color: #3b82f6;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .auth-links a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-card">
+        <div class="auth-header">
+            <i class="bi bi-wallet2 display-4 mb-3"></i>
+            <h1 class="h3 mb-0">Welcome Back</h1>
+            <p class="mb-0 opacity-75">Sign in to your account</p>
+        </div>
+        
+        <div class="auth-body">
+            <div id="error-alert" class="alert alert-danger d-none" role="alert">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                <span id="error-message"></span>
+            </div>
+            
+            <form id="loginForm">
+                <div class="form-floating mb-3">
+                    <input type="email" class="form-control" id="email" placeholder="name@example.com" required>
+                    <label for="email">
+                        <i class="bi bi-envelope me-2"></i>Email address
+                    </label>
+                </div>
+                
+                <div class="form-floating mb-3">
+                    <input type="password" class="form-control" id="password" placeholder="Password" required>
+                    <label for="password">
+                        <i class="bi bi-lock me-2"></i>Password
+                    </label>
+                </div>
+                
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" value="" id="rememberMe">
+                    <label class="form-check-label" for="rememberMe">
+                        Remember me
+                    </label>
+                </div>
+                
+                <button type="submit" class="btn btn-primary w-100" id="loginBtn">
+                    <span class="spinner-border spinner-border-sm me-2 d-none" id="loginSpinner"></span>
+                    <i class="bi bi-box-arrow-in-right me-2"></i>
+                    Sign In
+                </button>
+            </form>
+            
+            <div class="auth-links">
+                <a href="/Register">Don't have an account? Sign up</a>
+            </div>
+            
+            <hr class="my-4">
+            
+            <div class="text-center">
+                <small class="text-muted">
+                    <i class="bi bi-shield-check me-1"></i>
+                    Your data is secure with us
+                </small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    
+    <script>
+        $(document).ready(function() {
+            // Check if already logged in
+            if (localStorage.getItem('authToken')) {
+                window.location.href = '/';
+                return;
+            }
+            
+            $('#loginForm').on('submit', function(e) {
+                e.preventDefault();
+                handleLogin();
+            });
+        });
+        
+        function handleLogin() {
+            const email = $('#email').val();
+            const password = $('#password').val();
+            
+            if (!email || !password) {
+                showError('Please fill in all fields');
+                return;
+            }
+            
+            setLoading(true);
+            hideError();
+            
+            $.ajax({
+                url: '/api/auth/login',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    email: email,
+                    password: password
+                }),
+                success: function(response) {
+                    localStorage.setItem('authToken', response.token);
+                    localStorage.setItem('userData', JSON.stringify({
+                        userId: response.userId,
+                        email: response.email,
+                        name: response.name
+                    }));
+                    
+                    // Redirect to dashboard
+                    window.location.href = '/';
+                },
+                error: function(xhr) {
+                    let errorMessage = 'Login failed. Please try again.';
+                    
+                    if (xhr.status === 401) {
+                        errorMessage = 'Invalid email or password.';
+                    } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMessage = xhr.responseJSON.message;
+                    }
+                    
+                    showError(errorMessage);
+                },
+                complete: function() {
+                    setLoading(false);
+                }
+            });
+        }
+        
+        function setLoading(isLoading) {
+            const btn = $('#loginBtn');
+            const spinner = $('#loginSpinner');
+            
+            if (isLoading) {
+                btn.prop('disabled', true);
+                spinner.removeClass('d-none');
+            } else {
+                btn.prop('disabled', false);
+                spinner.addClass('d-none');
+            }
+        }
+        
+        function showError(message) {
+            $('#error-message').text(message);
+            $('#error-alert').removeClass('d-none');
+        }
+        
+        function hideError() {
+            $('#error-alert').addClass('d-none');
+        }
+    </script>
+</body>
+</html>

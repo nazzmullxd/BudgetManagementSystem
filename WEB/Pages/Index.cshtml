@@ -1,0 +1,418 @@
+﻿@page
+@model WEB.Pages.IndexModel
+
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<div id="app">
+    <!-- Welcome Message -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0">Welcome back, <span id="welcome-user">User</span>!</h1>
+            <p class="text-muted mb-0">Here's your financial overview for today</p>
+        </div>
+        <div class="text-end">
+            <p class="mb-0 small text-muted">Today</p>
+            <p class="h5 mb-0" id="current-date"></p>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="card-title mb-0 small text-muted">Total Income</p>
+                            <h3 class="mb-0 text-success" id="total-income">$0.00</h3>
+                        </div>
+                        <div class="stat-icon bg-success">
+                            <i class="bi bi-arrow-up"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <span class="badge bg-success bg-opacity-10 text-success" id="income-change">+0%</span>
+                        <span class="small text-muted ms-1">vs last month</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="card-title mb-0 small text-muted">Total Expenses</p>
+                            <h3 class="mb-0 text-danger" id="total-expenses">$0.00</h3>
+                        </div>
+                        <div class="stat-icon bg-danger">
+                            <i class="bi bi-arrow-down"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <span class="badge bg-danger bg-opacity-10 text-danger" id="expense-change">+0%</span>
+                        <span class="small text-muted ms-1">vs last month</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="card-title mb-0 small text-muted">Net Balance</p>
+                            <h3 class="mb-0" id="net-balance">$0.00</h3>
+                        </div>
+                        <div class="stat-icon bg-info">
+                            <i class="bi bi-wallet2"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <span class="badge bg-info bg-opacity-10 text-info" id="balance-change">+0%</span>
+                        <span class="small text-muted ms-1">vs last month</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="card-title mb-0 small text-muted">Budget Goals</p>
+                            <h3 class="mb-0" id="budget-goals">0</h3>
+                        </div>
+                        <div class="stat-icon bg-primary">
+                            <i class="bi bi-target"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <span class="badge bg-primary bg-opacity-10 text-primary" id="goals-completed">0 completed</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Monthly Overview Chart -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="card-title mb-0">Monthly Overview</h5>
+                        <div class="btn-group btn-group-sm" role="group">
+                            <input type="radio" class="btn-check" name="chartPeriod" id="month3" value="3">
+                            <label class="btn btn-outline-primary" for="month3">3M</label>
+                            <input type="radio" class="btn-check" name="chartPeriod" id="month6" value="6" checked>
+                            <label class="btn btn-outline-primary" for="month6">6M</label>
+                            <input type="radio" class="btn-check" name="chartPeriod" id="year1" value="12">
+                            <label class="btn btn-outline-primary" for="year1">1Y</label>
+                        </div>
+                    </div>
+                    <canvas id="monthly-chart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Category Breakdown -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Expense Categories</h5>
+                    <canvas id="category-chart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Transactions -->
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="card-title mb-0">Recent Transactions</h5>
+                        <button class="btn btn-primary btn-sm" onclick="navigateTo('expenses')">
+                            <i class="bi bi-plus-lg me-1"></i>Add Transaction
+                        </button>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Description</th>
+                                    <th>Category</th>
+                                    <th>Amount</th>
+                                    <th>Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transactions-table">
+                                <tr>
+                                    <td colspan="6" class="text-center py-4 text-muted">
+                                        <i class="bi bi-hourglass-split me-2"></i>Loading transactions...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Authentication Modal -->
+<div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="loginModalLabel">Please Login</h5>
+            </div>
+            <div class="modal-body">
+                <p>You need to log in to access your budget dashboard.</p>
+            </div>
+            <div class="modal-footer">
+                <a href="#" class="btn btn-outline-secondary" onclick="navigateTo('register')">Register</a>
+                <a href="#" class="btn btn-primary" onclick="navigateTo('login')">Login</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Set current date
+            $('#current-date').text(new Date().toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            }));
+            
+            // Check authentication
+            const token = localStorage.getItem('authToken');
+            if (!token) {
+                $('#loginModal').modal('show');
+                return;
+            }
+            
+            // Initialize dashboard
+            loadDashboardData();
+        });
+
+        function loadDashboardData() {
+            const token = localStorage.getItem('authToken');
+            
+            // Show loading
+            showLoading();
+            
+            // Load financial summary
+            $.ajax({
+                url: '/api/report/financial-summary',
+                type: 'GET',
+                headers: { 'Authorization': 'Bearer ' + token },
+                success: function(data) {
+                    $('#total-income').text('$' + data.totalIncome.toLocaleString('en-US', {minimumFractionDigits: 2}));
+                    $('#total-expenses').text('$' + data.totalExpenses.toLocaleString('en-US', {minimumFractionDigits: 2}));
+                    
+                    const netBalance = data.netAmount;
+                    $('#net-balance').text('$' + netBalance.toLocaleString('en-US', {minimumFractionDigits: 2}));
+                    $('#net-balance').toggleClass('text-success', netBalance >= 0);
+                    $('#net-balance').toggleClass('text-danger', netBalance < 0);
+                },
+                error: function(xhr) {
+                    if (xhr.status === 401) {
+                        localStorage.removeItem('authToken');
+                        $('#loginModal').modal('show');
+                    }
+                }
+            });
+            
+            // Load recent transactions
+            loadRecentTransactions();
+            
+            // Load charts
+            loadMonthlyChart();
+            loadCategoryChart();
+            
+            hideLoading();
+        }
+
+        function loadRecentTransactions() {
+            const token = localStorage.getItem('authToken');
+            let allTransactions = [];
+            
+            // Load expenses
+            $.ajax({
+                url: '/api/expense',
+                type: 'GET',
+                headers: { 'Authorization': 'Bearer ' + token },
+                success: function(expenses) {
+                    expenses.forEach(exp => {
+                        allTransactions.push({
+                            type: 'Expense',
+                            description: exp.itemName,
+                            category: exp.expenseCategoryId,
+                            amount: -(exp.itemPrice * exp.quantity),
+                            date: new Date(exp.transactionDate),
+                            id: exp.expenseId
+                        });
+                    });
+                    
+                    // Load incomes
+                    $.ajax({
+                        url: '/api/income',
+                        type: 'GET',
+                        headers: { 'Authorization': 'Bearer ' + token },
+                        success: function(incomes) {
+                            incomes.forEach(inc => {
+                                allTransactions.push({
+                                    type: 'Income',
+                                    description: inc.incomeDescription,
+                                    category: inc.incomeType,
+                                    amount: inc.incomeAmount,
+                                    date: new Date(inc.incomeDate),
+                                    id: inc.incomeId
+                                });
+                            });
+                            
+                            // Sort by date (most recent first)
+                            allTransactions.sort((a, b) => b.date - a.date);
+                            
+                            // Display recent transactions (limit to 10)
+                            displayTransactions(allTransactions.slice(0, 10));
+                        }
+                    });
+                }
+            });
+        }
+
+        function displayTransactions(transactions) {
+            const tbody = $('#transactions-table');
+            tbody.empty();
+            
+            if (transactions.length === 0) {
+                tbody.html('<tr><td colspan="6" class="text-center py-4 text-muted"><i class="bi bi-inbox me-2"></i>No transactions found</td></tr>');
+                return;
+            }
+            
+            transactions.forEach(transaction => {
+                const amountClass = transaction.amount >= 0 ? 'text-success' : 'text-danger';
+                const typeIcon = transaction.type === 'Income' ? 'bi-arrow-up-circle' : 'bi-arrow-down-circle';
+                const formattedAmount = (transaction.amount >= 0 ? '+' : '') + '$' + Math.abs(transaction.amount).toLocaleString('en-US', {minimumFractionDigits: 2});
+                
+                tbody.append(`
+                    <tr class="fade-in">
+                        <td>
+                            <i class="bi ${typeIcon} me-2 ${amountClass}"></i>
+                            ${transaction.type}
+                        </td>
+                        <td>${transaction.description}</td>
+                        <td><span class="badge bg-light text-dark">${transaction.category}</span></td>
+                        <td class="${amountClass} fw-bold">${formattedAmount}</td>
+                        <td>${transaction.date.toLocaleDateString()}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="editTransaction('${transaction.id}', '${transaction.type}')">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `);
+            });
+        }
+
+        function loadMonthlyChart() {
+            // This would load actual chart data
+            const ctx = document.getElementById('monthly-chart');
+            if (ctx) {
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                        datasets: [{
+                            label: 'Income',
+                            data: [3000, 3200, 2800, 3500, 3100, 3300],
+                            borderColor: 'rgb(34, 197, 94)',
+                            backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                            fill: true
+                        }, {
+                            label: 'Expenses',
+                            data: [2200, 2500, 2100, 2800, 2300, 2600],
+                            borderColor: 'rgb(239, 68, 68)',
+                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.05)'
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    display: false
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'top'
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        function loadCategoryChart() {
+            const ctx = document.getElementById('category-chart');
+            if (ctx) {
+                new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Food', 'Transport', 'Utilities', 'Entertainment', 'Other'],
+                        datasets: [{
+                            data: [30, 20, 25, 15, 10],
+                            backgroundColor: [
+                                '#3b82f6',
+                                '#ef4444',
+                                '#f59e0b',
+                                '#10b981',
+                                '#6b7280'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        function editTransaction(id, type) {
+            // Navigate to edit page
+            if (type === 'Income') {
+                navigateTo('income', { edit: id });
+            } else {
+                navigateTo('expenses', { edit: id });
+            }
+        }
+    </script>
+}
