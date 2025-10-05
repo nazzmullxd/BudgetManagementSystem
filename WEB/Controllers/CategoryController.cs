@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Business.Services;
 using WEB.Models;
+using WEB.Models.Requests;
 
 namespace WEB.Controllers
 {
@@ -26,15 +27,15 @@ namespace WEB.Controllers
             {
                 var userId = GetCurrentUserId();
                 if (string.IsNullOrEmpty(userId))
-                    return Unauthorized("User ID not found");
+                    return Unauthorized(new { message = "User ID not found" });
 
-                var categories = _categoryService.GetCategoriesForUser(userId);
+                var categories = await _categoryService.GetCategoriesForUserAsync(userId);
                 return Ok(categories);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving categories");
-                return StatusCode(500, "An error occurred while retrieving categories");
+                _logger.LogError(ex, "Error retrieving categories for user {UserId}", GetCurrentUserId());
+                return StatusCode(500, new { message = "An error occurred while retrieving categories" });
             }
         }
 
@@ -43,16 +44,16 @@ namespace WEB.Controllers
         {
             try
             {
-                var category = _categoryService.GetCategoryById(id);
+                var category = await _categoryService.GetCategoryByIdAsync(id);
                 if (category == null)
-                    return NotFound($"Category with ID {id} not found");
+                    return NotFound(new { message = $"Category with ID {id} not found" });
 
                 return Ok(category);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error retrieving category with ID {Id}", id);
-                return StatusCode(500, "An error occurred while retrieving the category");
+                return StatusCode(500, new { message = "An error occurred while retrieving the category" });
             }
         }
 
@@ -68,7 +69,7 @@ namespace WEB.Controllers
                 if (string.IsNullOrEmpty(userId))
                     return Unauthorized("User ID not found");
 
-                _categoryService.CreateCategory(userId, request.CategoryName, request.CategoryDescription);
+                await _categoryService.CreateCategoryAsync(userId, request.Name, request.Description);
                 return Ok(new { Message = "Category created successfully" });
             }
             catch (Exception ex)
@@ -86,7 +87,7 @@ namespace WEB.Controllers
                 if (!ModelState.IsValid)
                     return BadRequest(ModelState);
 
-                _categoryService.UpdateCategory(id, request.CategoryName, request.CategoryDescription);
+                await _categoryService.UpdateCategoryAsync(id, request.Name, request.Description);
                 return Ok(new { Message = "Category updated successfully" });
             }
             catch (Exception ex)
@@ -101,13 +102,13 @@ namespace WEB.Controllers
         {
             try
             {
-                _categoryService.DeleteCategory(id);
+                await _categoryService.DeleteCategoryAsync(id);
                 return Ok(new { Message = "Category deleted successfully" });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error deleting category with ID {Id}", id);
-                return StatusCode(500, "An error occurred while deleting the category");
+                return StatusCode(500, new { message = "An error occurred while deleting the category" });
             }
         }
 

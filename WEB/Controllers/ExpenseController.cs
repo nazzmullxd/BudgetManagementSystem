@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Business.Services;
 using Database.Model;
-using WEB.Models;
+using WEB.Models.Requests;
 
 namespace WEB.Controllers
 {
@@ -29,13 +29,13 @@ namespace WEB.Controllers
                 if (string.IsNullOrEmpty(currentUserId))
                     return Unauthorized("User ID not found");
 
-                var expenses = _expenseService.GetExpensesByUserId(currentUserId);
+                var expenses = await _expenseService.GetExpensesByUserIdAsync(currentUserId);
                 return Ok(expenses);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving expenses");
-                return StatusCode(500, "An error occurred while retrieving expenses");
+                _logger.LogError(ex, "Error retrieving expenses for user {UserId}", userId);
+                return StatusCode(500, new { message = "An error occurred while retrieving expenses" });
             }
         }
 
@@ -44,16 +44,16 @@ namespace WEB.Controllers
         {
             try
             {
-                var expense = _expenseService.GetExpenseById(id);
+                var expense = await _expenseService.GetExpenseByIdAsync(id);
                 if (expense == null)
-                    return NotFound($"Expense with ID {id} not found");
+                    return NotFound(new { message = $"Expense with ID {id} not found" });
 
                 return Ok(expense);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error retrieving expense with ID {Id}", id);
-                return StatusCode(500, "An error occurred while retrieving the expense");
+                return StatusCode(500, new { message = "An error occurred while retrieving the expense" });
             }
         }
 
@@ -76,14 +76,14 @@ namespace WEB.Controllers
                     ItemName = request.ItemName,
                     ItemPrice = request.ItemPrice,
                     Quantity = request.Quantity,
-                    ExpenseCategoryId = request.ExpenseCategoryId,
+                    ExpenseCategoryId = request.CategoryId,
                     TransactionDate = request.TransactionDate,
                     CurrencyId = request.CurrencyId,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
                 };
 
-                _expenseService.CreateExpense(expense);
+                await _expenseService.CreateExpenseAsync(expense);
 
                 return Ok(new { Message = "Expense created successfully" });
             }
@@ -102,18 +102,18 @@ namespace WEB.Controllers
                 if (!ModelState.IsValid)
                     return BadRequest(ModelState);
 
-                var existingExpense = _expenseService.GetExpenseById(id);
+                var existingExpense = await _expenseService.GetExpenseByIdAsync(id);
                 if (existingExpense == null)
-                    return NotFound($"Expense with ID {id} not found");
+                    return NotFound(new { message = $"Expense with ID {id} not found" });
 
                 existingExpense.ItemName = request.ItemName;
                 existingExpense.ItemPrice = request.ItemPrice;
                 existingExpense.Quantity = request.Quantity;
-                existingExpense.ExpenseCategoryId = request.ExpenseCategoryId;
+                existingExpense.ExpenseCategoryId = request.CategoryId;
                 existingExpense.TransactionDate = request.TransactionDate;
                 existingExpense.UpdatedAt = DateTime.UtcNow;
 
-                _expenseService.UpdateExpense(existingExpense);
+                await _expenseService.UpdateExpenseAsync(existingExpense);
 
                 return Ok(new { Message = "Expense updated successfully" });
             }
@@ -129,35 +129,35 @@ namespace WEB.Controllers
         {
             try
             {
-                _expenseService.DeleteExpense(id);
+                await _expenseService.DeleteExpenseAsync(id);
                 return Ok(new { Message = "Expense deleted successfully" });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error deleting expense with ID {Id}", id);
-                return StatusCode(500, "An error occurred while deleting the expense");
+                return StatusCode(500, new { message = "An error occurred while deleting the expense" });
             }
         }
 
         [HttpGet("by-date-range")]
-        public IActionResult GetExpensesByDateRange([FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate)
+        public async Task<IActionResult> GetExpensesByDateRange([FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate)
         {
             try
             {
                 var userId = GetCurrentUserId();
                 if (string.IsNullOrEmpty(userId))
-                    return Unauthorized("User ID not found");
+                    return Unauthorized(new { message = "User ID not found" });
 
                 var start = startDate ?? DateTime.Now.AddMonths(-1);
                 var end = endDate ?? DateTime.Now;
 
-                var expenses = _expenseService.GetExpensesByUserIdAndDateRange(userId, start, end);
+                var expenses = await _expenseService.GetExpensesByUserIdAndDateRangeAsync(userId, start, end);
                 return Ok(expenses);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving expenses by date range");
-                return StatusCode(500, "An error occurred while retrieving expenses by date range");
+                _logger.LogError(ex, "Error retrieving expenses by date range for user {UserId}", GetCurrentUserId());
+                return StatusCode(500, new { message = "An error occurred while retrieving expenses by date range" });
             }
         }
 

@@ -7,23 +7,25 @@ using System.Text;
 using Business.Services;
 using Database.Model;
 using WEB.Models;
+using WEB.Models.Requests;
 
 namespace WEB.Controllers
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    public class AuthController : ControllerBase
+    public class AuthController : BaseApiController
     {
         private readonly IUserService _userService;
+        private readonly IJwtService _jwtService;
         private readonly IConfiguration _configuration;
         private readonly ILogger<AuthController> _logger;
 
         public AuthController(
             IUserService userService,
+            IJwtService jwtService,
             IConfiguration configuration,
             ILogger<AuthController> logger)
         {
             _userService = userService;
+            _jwtService = jwtService;
             _configuration = configuration;
             _logger = logger;
         }
@@ -31,138 +33,155 @@ namespace WEB.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
-            try
+            // Validate model state
+            var validationResult = ValidateModelState();
+            if (validationResult != null)
+                return validationResult;
+
+            var loginResponse = await _userService.LoginAsync(request.Email, request.Password);
+            
+            var response = new AuthResponse
             {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
+                Token = loginResponse.AccessToken,
+                RefreshToken = loginResponse.RefreshToken,
+                UserId = loginResponse.UserId,
+                Email = loginResponse.Email,
+                Name = loginResponse.Username,
+                ExpiresAt = loginResponse.AccessTokenExpiration
+            };
 
-                var userId = _userService.Login(request.Email, request.Password);
-                var user = _userService.GetUserById(userId);
-
-                if (user == null)
-                    return Unauthorized("Invalid credentials");
-
-                var token = GenerateJwtToken(user);
-                var response = new AuthResponse
-                {
-                    Token = token,
-                    UserId = user.UserId,
-                    Email = user.Email,
-                    Name = user.Name,
-                    ExpiresAt = DateTime.UtcNow.AddDays(7)
-                };
-
-                return Ok(response);
-            }
-            catch (UnauthorizedAccessException)
-            {
-                return Unauthorized("Invalid email or password");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error during login for email {Email}", request.Email);
-                return StatusCode(500, "An error occurred during login");
-            }
+            return Ok(response);
         }
 
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] RegisterRequest request)
+        public IActionResult Register([FromBody] RegisterRequest request)
         {
-            try
+            // Validate model state
+            var validationResult = ValidateModelState();
+            if (validationResult != null)
+                return validationResult;
+
+            // Validate password strength
+            if (!_userService.ValidatePasswordStrength(request.Password, out var validationErrors))
             {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
-
-                var user = new User
+                return BadRequest(new ValidationErrorResponse
                 {
-                    FirstName = request.FirstName,
-                    LastName = request.LastName,
-                    Email = request.Email,
-                    PreferredCurrencyId = request.PreferredCurrencyId
-                };
-
-                _userService.Register(user, request.Password);
-
-                var token = GenerateJwtToken(user);
-                var response = new AuthResponse
-                {
-                    Token = token,
-                    UserId = user.UserId,
-                    Email = user.Email,
-                    Name = user.Name,
-                    ExpiresAt = DateTime.UtcNow.AddDays(7)
-                };
-
-                return Ok(response);
+                    Status = 400,
+                    TraceId = HttpContext.TraceIdentifier,
+                    Path = HttpContext.Request.Path.Value,
+                    ValidationErrors = new Dictionary<string, string[]> { ["Password"] = validationErrors.ToArray() }
+                });
             }
-            catch (Exception ex)
+
+            var user = new User
             {
-                _logger.LogError(ex, "Error during registration for email {Email}", request.Email);
-                return StatusCode(500, "An error occurred during registration");
-            }
+                FirstName = request.FirstName,
+                LastName = request.LastName,
+                Email = request.Email,
+                PreferredCurrencyId = request.PreferredCurrencyId
+            };
+
+            _userService.Register(user, request.Password);
+
+            var accessToken = _jwtService.GenerateAccessToken(user);
+            var refreshToken = _jwtService.GenerateRefreshToken();
+            var accessTokenExpirationMinutes = _jwtService.GetAccessTokenExpirationMinutes();
+            
+            var response = new AuthResponse
+            {
+                Token = accessToken,
+                RefreshToken = refreshToken,
+                UserId = user.UserId,
+                Email = user.Email,
+                Name = user.Name,
+                ExpiresAt = DateTime.UtcNow.AddMinutes(accessTokenExpirationMinutes)
+            };
+
+            return Ok(response);
         }
 
         [HttpPost("refresh")]
-        public async Task<IActionResult> RefreshToken()
+        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
         {
-            try
+            // Validate model state
+            var validationResult = ValidateModelState();
+            if (validationResult != null)
+                return validationResult;
+
+            var loginResponse = await _userService.RefreshTokenAsync(request.RefreshToken);
+            
+            var response = new AuthResponse
             {
-                var userId = User.FindFirst("UserId")?.Value;
-                if (string.IsNullOrEmpty(userId))
-                    return Unauthorized("Invalid token");
-
-                var user = _userService.GetUserById(userId);
-                if (user == null)
-                    return Unauthorized("User not found");
-
-                var token = GenerateJwtToken(user);
-                var response = new AuthResponse
-                {
-                    Token = token,
-                    UserId = user.UserId,
-                    Email = user.Email,
-                    Name = user.Name,
-                    ExpiresAt = DateTime.UtcNow.AddDays(7)
-                };
-
-                return Ok(response);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error during token refresh");
-                return StatusCode(500, "An error occurred during token refresh");
-            }
-        }
-
-        private string GenerateJwtToken(User user)
-        {
-            var jwtSettings = _configuration.GetSection("JwtSettings");
-            var secretKey = jwtSettings["SecretKey"] ?? "MyVeryLongSecretKeyForJWTTokenGeneration123456789";
-            var issuer = jwtSettings["Issuer"] ?? "BudgetManagementSystem";
-            var audience = jwtSettings["Audience"] ?? "BudgetManagementSystemUsers";
-
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
-            var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-            var claims = new[]
-            {
-                new Claim("UserId", user.UserId),
-                new Claim(ClaimTypes.Email, user.Email),
-                new Claim(ClaimTypes.Name, user.Name),
-                new Claim(JwtRegisteredClaimNames.Sub, user.UserId),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64)
+                Token = loginResponse.AccessToken,
+                RefreshToken = loginResponse.RefreshToken,
+                UserId = loginResponse.UserId,
+                Email = loginResponse.Email,
+                Name = loginResponse.Username,
+                ExpiresAt = loginResponse.AccessTokenExpiration
             };
 
-            var token = new JwtSecurityToken(
-                issuer: issuer,
-                audience: audience,
-                claims: claims,
-                expires: DateTime.UtcNow.AddDays(7),
-                signingCredentials: credentials
-            );
+            return Ok(response);
+        }
 
-            return new JwtSecurityTokenHandler().WriteToken(token);
+
+
+        [HttpPost("change-password")]
+        public IActionResult ChangePassword([FromBody] ChangePasswordRequest request)
+        {
+            // Validate model state
+            var validationResult = ValidateModelState();
+            if (validationResult != null)
+                return validationResult;
+
+            // Require authentication
+            var authResult = RequireAuthentication();
+            if (authResult != null)
+                return authResult;
+
+            var userId = GetCurrentUserId();
+            if (string.IsNullOrEmpty(userId))
+                throw new UnauthorizedAccessException("User ID not found in token claims");
+
+            // Validate new password strength
+            if (!_userService.ValidatePasswordStrength(request.NewPassword, out var validationErrors))
+            {
+                return BadRequest(new ValidationErrorResponse
+                {
+                    Status = 400,
+                    TraceId = HttpContext.TraceIdentifier,
+                    Path = HttpContext.Request.Path.Value,
+                    ValidationErrors = new Dictionary<string, string[]> { ["NewPassword"] = validationErrors.ToArray() }
+                });
+            }
+
+            _userService.ChangePassword(userId, request.CurrentPassword, request.NewPassword);
+
+            return Ok(new { message = "Password changed successfully" });
+        }
+
+        [HttpPost("validate-password")]
+        public IActionResult ValidatePassword([FromBody] ValidatePasswordRequest request)
+        {
+            // Validate model state
+            var validationResult = ValidateModelState();
+            if (validationResult != null)
+                return validationResult;
+
+            var isValid = _userService.ValidatePasswordStrength(request.Password, out var validationErrors);
+
+            return Ok(new 
+            { 
+                isValid = isValid, 
+                errors = validationErrors,
+                requirements = new
+                {
+                    minLength = 8,
+                    requireUppercase = true,
+                    requireLowercase = true,
+                    requireNumber = true,
+                    requireSpecialCharacter = true
+                }
+            });
         }
     }
 }

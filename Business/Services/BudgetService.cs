@@ -65,7 +65,7 @@ namespace Business.Services
             };
 
             _budgetGoalRepository.Add(budgetGoal);
-            LogAction(_logger, userId, "Budget Goal Set", $"Budget goal set for category {category.CategoryName}: {amount}");
+            LogAction(_logger, userId, "Budget Goal Set", $"Budget goal set for category {category?.CategoryName ?? "Unknown"}: {amount}");
         }
 
         public bool CheckBudgetExceeded(string userId, string categoryId, DateTime startDate, DateTime endDate)
@@ -81,12 +81,12 @@ namespace Business.Services
                 throw new ArgumentException("Category ID is required.");
             }
 
-            var budgetGoals = _budgetGoalRepository.GetByUserId(userId)
+            var budgetGoals = _budgetGoalRepository.GetByUserId(userId)?
                 .Where(bg => bg.ExpenseCategoryId == categoryId &&
                              bg.TargetDate >= startDate)
                 .ToList();
 
-            if (!budgetGoals.Any())
+            if (budgetGoals == null || !budgetGoals.Any())
             {
                 _logger.LogInformation("No budget goal found for user {UserId}, category {CategoryId}", userId, categoryId);
                 return false;
@@ -113,11 +113,11 @@ namespace Business.Services
                 throw new ArgumentException("Category ID is required.");
             }
 
-            var expenses = _expenseRepository.GetByUserIdAndDateRange(userId, startDate, endDate)
+            var expenses = _expenseRepository.GetByUserIdAndDateRange(userId, startDate, endDate)?
                 .Where(e => e.ExpenseCategoryId == categoryId)
                 .ToList();
 
-            var total = expenses.Sum(e => e.TotalCost);
+            var total = expenses?.Sum(e => e.TotalCost) ?? 0;
             _logger.LogInformation("Total expenses for user {UserId}, category {CategoryId}: {Total}", userId, categoryId, total);
             return total;
         }

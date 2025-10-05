@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Business.Services;
 using WEB.Models;
+using WEB.Models.Requests;
 
 namespace WEB.Controllers
 {
@@ -72,10 +73,10 @@ namespace WEB.Controllers
                 {
                     IncomeId = Guid.NewGuid().ToString(),
                     UserId = userId,
-                    IncomeSource = request.IncomeSource,
+                    IncomeSource = request.Source,
                     IncomeType = request.IncomeType,
-                    IncomeDescription = request.IncomeDescription,
-                    IncomeAmount = request.IncomeAmount,
+                    IncomeDescription = request.Description ?? string.Empty,
+                    IncomeAmount = request.Amount,
                     IncomeDate = request.IncomeDate,
                     IncomeTax = request.IncomeTax,
                     Frequency = request.Frequency,
@@ -105,10 +106,10 @@ namespace WEB.Controllers
                 if (existingIncome == null)
                     return NotFound($"Income with ID {id} not found");
 
-                existingIncome.IncomeSource = request.IncomeSource;
+                existingIncome.IncomeSource = request.Source;
                 existingIncome.IncomeType = request.IncomeType;
-                existingIncome.IncomeDescription = request.IncomeDescription;
-                existingIncome.IncomeAmount = request.IncomeAmount;
+                existingIncome.IncomeDescription = request.Description ?? string.Empty;
+                existingIncome.IncomeAmount = request.Amount;
                 existingIncome.IncomeDate = request.IncomeDate;
                 existingIncome.IncomeTax = request.IncomeTax;
                 existingIncome.Frequency = request.Frequency;

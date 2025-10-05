@@ -6,6 +6,10 @@ using System.Text;
 using Database.Context;
 using Database.Repositories;
 using Business.Services;
+using WEB.Middleware;
+using WEB.Profiles;
+using FluentValidation;
+using FluentValidation.AspNetCore;
 
 namespace WEB
 {
@@ -18,6 +22,11 @@ namespace WEB
             // Add services to the container
             builder.Services.AddControllers();
             builder.Services.AddRazorPages();
+
+            // Add FluentValidation
+            builder.Services.AddFluentValidationAutoValidation()
+                           .AddFluentValidationClientsideAdapters()
+                           .AddValidatorsFromAssemblyContaining<Program>();
 
             // Add Entity Framework
             builder.Services.AddDbContext<BudgetManagementContext>(options =>
@@ -36,7 +45,15 @@ namespace WEB
 
             // Add JWT Authentication
             var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-            var secretKey = jwtSettings["SecretKey"] ?? "MyVeryLongSecretKeyForJWTTokenGeneration123456789";
+            var secretKey = jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey not configured");
+            var issuer = jwtSettings["Issuer"] ?? throw new InvalidOperationException("JWT Issuer not configured");
+            var audience = jwtSettings["Audience"] ?? throw new InvalidOperationException("JWT Audience not configured");
+
+            // Validate secret key length for security
+            if (Encoding.UTF8.GetBytes(secretKey).Length < 32)
+            {
+                throw new InvalidOperationException("JWT SecretKey must be at least 256 bits (32 characters) long for security");
+            }
 
             builder.Services.AddAuthentication(options =>
             {
@@ -51,10 +68,30 @@ namespace WEB
                     ValidateAudience = true,
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
-                    ValidIssuer = jwtSettings["Issuer"] ?? "BudgetManagementSystem",
-                    ValidAudience = jwtSettings["Audience"] ?? "BudgetManagementSystemUsers",
+                    ValidIssuer = issuer,
+                    ValidAudience = audience,
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
                     ClockSkew = TimeSpan.Zero
+                };
+
+                // Add event handlers for better error handling
+                options.Events = new JwtBearerEvents
+                {
+                    OnAuthenticationFailed = context =>
+                    {
+                        context.Response.StatusCode = 401;
+                        context.Response.ContentType = "application/json";
+                        var result = System.Text.Json.JsonSerializer.Serialize(new { error = "Invalid token" });
+                        return context.Response.WriteAsync(result);
+                    },
+                    OnChallenge = context =>
+                    {
+                        context.HandleResponse();
+                        context.Response.StatusCode = 401;
+                        context.Response.ContentType = "application/json";
+                        var result = System.Text.Json.JsonSerializer.Serialize(new { error = "Unauthorized access" });
+                        return context.Response.WriteAsync(result);
+                    }
                 };
             });
 
@@ -74,6 +111,7 @@ namespace WEB
             builder.Services.AddScoped<ITransactionTagRepository, TransactionTagRepository>();
 
             // Register Business Services
+            builder.Services.AddScoped<IJwtService, JwtService>();
             builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddScoped<IExpenseService, ExpenseService>();
             builder.Services.AddScoped<IIncomeService, IncomeService>();
@@ -124,12 +162,22 @@ namespace WEB
                 });
             });
 
+            // Add AutoMapper with explicit profile configuration
+            builder.Services.AddAutoMapper(config =>
+            {
+                config.AddProfile<AutoMapperProfile>();
+            });
+
             // Add logging
             builder.Services.AddLogging();
 
             var app = builder.Build();
 
             // Configure the HTTP request pipeline
+            
+            // Add global exception handling middleware (must be early in pipeline)
+            app.UseGlobalExceptionHandler();
+
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
@@ -141,7 +189,8 @@ namespace WEB
             }
             else
             {
-                app.UseExceptionHandler("/Error");
+                // Remove the default exception handler since we have our global middleware
+                // app.UseExceptionHandler("/Error");
                 app.UseHsts();
             }
 

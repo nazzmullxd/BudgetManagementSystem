@@ -92,15 +92,21 @@ namespace Database
             reminderRepo.Add(reminder);
 
             var expenses = expenseRepo.GetByUserId(user.UserId);
-            foreach (var exp in expenses)
+            if (expenses != null)
             {
-                Console.WriteLine($"Expense: {exp.ItemName}, Total Cost: {exp.TotalCost}, Category: {exp.Category.CategoryName}");
+                foreach (var exp in expenses)
+                {
+                    Console.WriteLine($"Expense: {exp.ItemName}, Total Cost: {exp.TotalCost}, Category: {exp.Category?.CategoryName ?? "Unknown"}");
+                }
             }
 
             var reminders = reminderRepo.GetUpcomingReminders(user.UserId, DateTime.Now.AddDays(2));
-            foreach (var rem in reminders)
+            if (reminders != null)
             {
-                Console.WriteLine($"Reminder: {rem.Description}, Due: {rem.DueDate}");
+                foreach (var rem in reminders)
+                {
+                    Console.WriteLine($"Reminder: {rem.Description}, Due: {rem.DueDate}");
+                }
             }
         }
     }

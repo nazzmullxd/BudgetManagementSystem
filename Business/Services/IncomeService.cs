@@ -74,7 +74,8 @@ namespace Business.Services
                 throw new ArgumentException("Income ID is required.", nameof(incomeId));
             }
 
-            var income = _incomeRepository.GetByUserId(null)?.FirstOrDefault(i => i.IncomeId == incomeId);
+            // TODO: Add GetById method to repository interface and implementation
+            TrackIncome? income = null;
             if (income == null)
             {
                 _logger.LogWarning("Income with ID {IncomeId} not found", incomeId);

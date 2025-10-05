@@ -58,20 +58,26 @@ namespace Business.Services
             ValidateUser(userId);
             ValidateDateRange(startDate, endDate);
 
-            List<AuditLog> auditLogs;
-            if (startDate == null || endDate == null)
+            var auditLogs = _auditLogRepository.GetByUserId(userId);
+            List<AuditLog> filteredLogs;
+            
+            if (auditLogs == null)
             {
-                auditLogs = _auditLogRepository.GetByUserId(userId);
+                filteredLogs = new List<AuditLog>();
+            }
+            else if (startDate == null || endDate == null)
+            {
+                filteredLogs = auditLogs.ToList();
             }
             else
             {
-                auditLogs = _auditLogRepository.GetByUserId(userId)
+                filteredLogs = auditLogs
                     .Where(log => log.Timestamp >= startDate && log.Timestamp <= endDate)
                     .ToList();
             }
 
-            _logger.LogInformation("Retrieved {Count} audit logs for user {UserId}", auditLogs.Count, userId);
-            return auditLogs;
+            _logger.LogInformation("Retrieved {Count} audit logs for user {UserId}", filteredLogs.Count, userId);
+            return filteredLogs;
         }
     }
 }
